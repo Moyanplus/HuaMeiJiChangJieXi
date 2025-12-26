@@ -1,0 +1,19 @@
+{
+  "name": "ggg-order-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Scripts for creating VIP lounge orders",
+  "scripts": {
+    "create-order": "node createOrder.js",
+    "get-city": "node getCityData.js",
+    "get-lounge": "node getLoungeData.js",
+    "get-lounge-detail": "node getLoungeDetail.js"
+  },
+  "dependencies": {
+    "axios": "^1.12.2",
+    "crypto-js": "^4.2.0",
+    "sm-crypto": "^0.3.13",
+    "xlsx": "^0.18.5"
+  }
+}

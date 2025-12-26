@@ -1,0 +1,30 @@
+{
+  "name": "sd-crypto-tools",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Tools for SD encryption/decryption and API requests",
+  "scripts": {
+    "start": "node src/api/server.js",
+    "dev": "node scripts/startWithScheduler.js",
+    "sync-cities": "node src/services/syncCityData.js",
+    "scheduler": "node src/utils/scheduler.js start",
+    "scheduler-stop": "node src/utils/scheduler.js stop",
+    "scheduler-status": "node src/utils/scheduler.js status",
+    "scheduler-sync": "node src/utils/scheduler.js sync",
+    "manage": "node scripts/manage.js",
+    "install-mac": "chmod +x start.sh && npm install"
+  },
+  "dependencies": {
+    "axios": "^1.12.2",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "node-cron": "^3.0.3",
+    "qrcode": "^1.5.4",
+    "sm-crypto": "^0.3.13",
+    "sqli": "^0.0.4",
+    "sqlite3": "^5.1.7"
+  }
+}

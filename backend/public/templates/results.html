@@ -1,0 +1,64 @@
+<!-- 完整流程结果 -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">完整流程结果</div>
+    <div class="pill">data → custNo → orderId → orderNo → couponNum</div>
+  </div>
+  <div class="card-body">
+    <div class="result-grid">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">步骤1: 解密URL中的data参数</div>
+        </div>
+        <div class="card-body"><pre id="out-step1"></pre></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">步骤2: 获取用户订单列表</div>
+        </div>
+        <div class="card-body"><pre id="out-step2"></pre></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">步骤3: 查询订单详情</div>
+        </div>
+        <div class="card-body"><pre id="out-step3"></pre></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">步骤4: 提取最终orderNo</div>
+        </div>
+        <div class="card-body"><pre id="out-step4"></pre></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">步骤5: 请求couponNum</div>
+        </div>
+        <div class="card-body"><pre id="out-step5"></pre></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 加密/解密结果 -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">加密/解密结果</div>
+    <div class="pill">文本处理结果</div>
+  </div>
+  <div class="card-body">
+    <pre
+      id="out-crypto"
+      style="
+        margin: 0;
+        background: #0f1628;
+        color: #cfe3ff;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 10px;
+        max-height: 200px;
+        overflow: auto;
+      "
+    ></pre>
+  </div>
+</div>

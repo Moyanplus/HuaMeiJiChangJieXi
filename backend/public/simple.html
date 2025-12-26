@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SD 链接解析工具</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="title">SD 链接解析工具</div>
+        <div class="pill" id="status">就绪</div>
+      </div>
+
+      <!-- 标签页导航 -->
+      <div class="tab-navigation">
+        <div class="tab-chip active" data-tab="decrypt">链接解析</div>
+        <div class="tab-chip" data-tab="order">创建订单</div>
+        <div class="tab-chip" data-tab="query">查询订单</div>
+        <div class="tab-chip" data-tab="qrcode">二维码</div>
+        <div class="tab-chip" data-tab="crypto">加解密</div>
+      </div>
+
+      <!-- 链接解析标签页 -->
+      <div class="tab-content active" id="tab-decrypt">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">输入链接</div>
+            <div class="pill">粘贴包含 data 和 sign 参数的链接</div>
+          </div>
+          <div class="card-body">
+            <div class="input-group">
+              <label class="input-label" for="urlInput">SD 链接</label>
+              <input
+                type="url"
+                id="urlInput"
+                placeholder="https://h5.schengle.com/ShengDaHXZHJSJ/#/order/vipDetails?data=...&sign=..."
+              />
+            </div>
+            <div class="actions">
+              <button
+                class="btn-primary"
+                id="btn-full-flow"
+                style="
+                  background: linear-gradient(135deg, #4f8cff 0%, #00d4ff 100%);
+                "
+              >
+                一键运行完整流程
+              </button>
+            </div>
+            <div class="status" id="statusMsg" style="display: none"></div>
+          </div>
+        </div>
+
+        <!-- 完整流程结果 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">完整流程结果</div>
+            <div class="pill">
+              data → custNo → orderId → orderNo → couponNum
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="result-grid">
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">步骤1: 解密URL中的data参数</div>
+                </div>
+                <div class="card-body"><pre id="out-step1"></pre></div>
+              </div>
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">步骤2: 获取用户订单列表</div>
+                </div>
+                <div class="card-body"><pre id="out-step2"></pre></div>
+              </div>
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">步骤3: 查询订单详情</div>
+                </div>
+                <div class="card-body"><pre id="out-step3"></pre></div>
+              </div>
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">步骤4: 提取最终orderNo</div>
+                </div>
+                <div class="card-body"><pre id="out-step4"></pre></div>
+              </div>
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">步骤5: 请求couponNum</div>
+                </div>
+                <div class="card-body"><pre id="out-step5"></pre></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 创建订单标签页 -->
+      <div class="tab-content" id="tab-order">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">创建订单</div>
+            <div class="pill">贵宾厅订单创建</div>
+          </div>
+          <div class="card-body">
+            <div class="input-group">
+              <label class="input-label" for="createPhoneNoOrder"
+                >手机号码</label
+              >
+              <input
+                type="tel"
+                id="createPhoneNoOrder"
+                placeholder="请输入手机号码..."
+              />
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="createNameOrder">姓名</label>
+              <input
+                type="text"
+                id="createNameOrder"
+                placeholder="请输入姓名..."
+              />
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="loungeSearchInputOrder"
+                >选择贵宾厅</label
+              >
+              <div class="lounge-selector">
+                <input
+                  type="text"
+                  id="loungeSearchInputOrder"
+                  placeholder="搜索贵宾厅名称或代码..."
+                  autocomplete="off"
+                />
+                <div
+                  class="lounge-dropdown"
+                  id="loungeDropdownOrder"
+                  style="display: none"
+                >
+                  <div class="lounge-options" id="loungeOptionsOrder"></div>
+                </div>
+                <input type="hidden" id="createLoungeCodeOrder" value="" />
+              </div>
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="createAccompanierNumberOrder"
+                >陪同人数</label
+              >
+              <input
+                type="number"
+                id="createAccompanierNumberOrder"
+                placeholder="0"
+                min="0"
+                max="10"
+                value="0"
+              />
+            </div>
+            <div class="actions">
+              <button
+                class="btn-primary"
+                id="btn-create-order-tab"
+                style="
+                  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+                  width: 100%;
+                "
+              >
+                创建订单
+              </button>
+            </div>
+            <div
+              class="status"
+              id="createOrderStatusTab"
+              style="display: none"
+            ></div>
+            <div
+              id="createOrderResultTab"
+              style="display: none; margin-top: 12px"
+            >
+              <pre
+                id="createOrderOutputTab"
+                style="font-size: 11px; max-height: 200px"
+              ></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 加解密标签页 -->
+      <div class="tab-content" id="tab-crypto">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">文本加解密</div>
+            <div class="pill">AES加密/解密工具</div>
+          </div>
+          <div class="card-body">
+            <div class="input-group">
+              <label class="input-label" for="textInput">输入文本</label>
+              <textarea
+                id="textInput"
+                placeholder="请输入要加密或解密的文本..."
+                rows="4"
+              ></textarea>
+            </div>
+            <div class="actions">
+              <button class="btn-primary" id="btn-encrypt">加密</button>
+              <button class="btn-secondary" id="btn-decrypt">解密</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 加密/解密结果 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">加密/解密结果</div>
+            <div class="pill">文本处理结果</div>
+          </div>
+          <div class="card-body">
+            <pre id="out-crypto"></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- 查询订单标签页 -->
+      <div class="tab-content" id="tab-query">
+        <!-- 状态消息 -->
+        <div class="status" id="queryStatusMsg" style="display: none"></div>
+
+        <!-- 订单列表 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">订单列表</div>
+            <div class="pill" id="orderCount">共 0 个订单</div>
+          </div>
+          <div class="card-body">
+            <div id="orderList" class="order-list">
+              <div class="empty-state">
+                <div class="empty-icon">📋</div>
+                <div class="empty-text">暂无订单数据</div>
+                <div class="empty-desc">请先查询订单</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 二维码标签页 -->
+      <div class="tab-content" id="tab-qrcode">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">二维码生成</div>
+            <div class="pill">有效期 30s · 自动刷新</div>
+          </div>
+          <div class="card-body">
+            <div class="input-group">
+              <label class="input-label" for="orderIdInputQR"
+                >短信订单号（h5OrderNo）</label
+              >
+              <input
+                type="text"
+                id="orderIdInputQR"
+                placeholder="请输入订单号（短信验证用）..."
+              />
+            </div>
+            <div class="actions">
+              <button class="btn-secondary" id="btn-send-sms">
+                发送验证码
+              </button>
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="smsCodeInputQR">短信验证码</label>
+              <input
+                type="text"
+                id="smsCodeInputQR"
+                placeholder="请输入短信验证码..."
+              />
+            </div>
+            <div class="actions">
+              <button class="btn-primary" id="btn-confirm-sms">
+                确认获取二维码
+              </button>
+            </div>
+            <div class="pill" style="margin-bottom: 10px">
+              smsToken：<span id="smsTokenValue">--</span>
+            </div>
+            <div class="status" id="smsStatusMsg" style="display: none"></div>
+            <div class="input-group">
+              <label class="input-label" for="userNameInputQR">显示姓名</label>
+              <input
+                type="text"
+                id="userNameInputQR"
+                placeholder="请输入显示姓名（前端显示用）..."
+              />
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="typeSelectQR">服务类型</label>
+              <select id="typeSelectQR">
+                <option value="pp">悦途（pp）</option>
+                <option value="hy">盛大（hy）</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="orderUserNameInputQR"
+                >订单用户名（自动填充）</label
+              >
+              <input
+                type="text"
+                id="orderUserNameInputQR"
+                placeholder="执行完整流程后自动填充..."
+                readonly
+                style="
+                  background: #1a2332;
+                  color: var(--muted);
+                  cursor: not-allowed;
+                "
+              />
+            </div>
+            <div class="actions" style="margin-bottom: 12px">
+              <button
+                class="btn-primary"
+                id="btn-generate-link-tab"
+                style="
+                  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+                "
+              >
+                生成专属链接
+              </button>
+            </div>
+            <div class="qr-wrap" id="qrcodeTab" style="min-height: 200px"></div>
+            <div class="qr-meta">
+              <div class="pill">
+                couponCode / couponNum：<span id="codeTextTab">--</span>
+              </div>
+              <div class="countdown" id="countdownTab">--</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 自定义确认弹窗 -->
+    <div id="customModal" class="custom-modal" style="display: none">
+      <div class="custom-modal-overlay"></div>
+      <div class="custom-modal-content">
+        <div class="custom-modal-header">
+          <h3>确认操作</h3>
+        </div>
+        <div class="custom-modal-body">
+          <p id="modalMessage">确定要执行此操作吗？</p>
+        </div>
+        <div class="custom-modal-footer">
+          <button id="modalCancel" class="btn-secondary">取消</button>
+          <button id="modalConfirm" class="btn-primary">确认</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 配置信息 -->
+    <script>
+      // 从服务器获取配置
+      window.CONFIG = {
+        CARD_TYPE_CODE: "HXYX0803", // 默认值，实际值将从服务器获取
+      };
+
+      // 动态加载配置
+      fetch("/api/config")
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.ok) {
+            window.CONFIG = data.config;
+            console.log("配置加载成功:", window.CONFIG);
+          }
+        })
+        .catch((error) => {
+          console.warn("配置加载失败，使用默认值:", error);
+        });
+    </script>
+
+    <!-- 优先使用本地QRCode库，避免CDN延迟 -->
+    <script src="/qrcode.js"></script>
+    <script>
+      // 如果本地库加载失败，再尝试CDN
+      if (typeof QRCode === "undefined") {
+        console.log("本地QRCode库未加载，尝试CDN");
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js";
+        script.onload = function () {
+          console.log("CDN QRCode库加载成功");
+        };
+        script.onerror = function () {
+          console.error("CDN QRCode库也加载失败");
+        };
+        document.head.appendChild(script);
+      } else {
+        console.log("本地QRCode库加载成功");
+      }
+    </script>
+
+    <!-- 加载模块化JavaScript文件 -->
+    <script src="js/api.js"></script>
+    <script src="js/status.js"></script>
+    <script src="js/modal-manager.js"></script>
+    <script src="js/lounge-search.js"></script>
+    <script src="js/qrcode.js"></script>
+    <script src="js/tabs.js"></script>
+    <!-- 业务模块 -->
+    <script src="js/order-manager.js"></script>
+    <script src="js/flow-manager.js"></script>
+    <script src="js/crypto-manager.js"></script>
+    <script src="js/link-manager.js"></script>
+    <script src="js/sms-coupon-manager.js"></script>
+    <!-- 主应用 -->
+    <script src="js/app-refactored.js"></script>
+  </body>
+</html>

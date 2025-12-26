@@ -1,0 +1,13 @@
+.DS_Store
+node_modules/
+backend/logs/
+bin1/data/temp/
+bin1/data/generated/intermediate/
+bin1/data/generated/
+bin1/data/exports/
+BIN/_archive/
+BIN/_logs/
+BIN/_trash/
+BIN/_exports/
+*.log
+*.log.gz

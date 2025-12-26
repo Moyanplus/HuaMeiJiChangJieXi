@@ -1,0 +1,250 @@
+<!-- 链接解析标签页 -->
+<div class="tab-content active" id="tab-decrypt">
+  <div
+    class="result-grid"
+    style="grid-template-columns: 1fr 300px; gap: 18px"
+    id="main-grid"
+  >
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">输入链接</div>
+        <div class="pill">粘贴包含 data 和 sign 参数的链接</div>
+      </div>
+      <div class="card-body">
+        <div class="input-group">
+          <label class="input-label" for="urlInput">SD 链接</label>
+          <input
+            type="url"
+            id="urlInput"
+            <!--
+            placeholder="https://h5.schengle.com/ShengDaHXZHJSJ/#/order/vipDetails?data=...&sign=..."
+            --
+          />
+          />
+        </div>
+        <div class="actions">
+          <button
+            class="btn-primary"
+            id="btn-full-flow"
+            style="
+              background: linear-gradient(135deg, #4f8cff 0%, #00d4ff 100%);
+            "
+          >
+            一键运行完整流程
+          </button>
+        </div>
+        <div class="status" id="statusMsg" style="display: none"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">创建订单</div>
+        <div class="pill">贵宾厅订单创建</div>
+      </div>
+      <div class="card-body">
+        <div class="input-group">
+          <label class="input-label" for="createPhoneNo">手机号码</label>
+          <input
+            type="tel"
+            id="createPhoneNo"
+            placeholder="请输入手机号码..."
+            style="
+              width: 100%;
+              padding: 10px;
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 10px;
+              background: #0f1628;
+              color: var(--text);
+              font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+                monospace;
+              margin-bottom: 12px;
+            "
+          />
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="createName">姓名</label>
+          <input
+            type="text"
+            id="createName"
+            placeholder="请输入姓名..."
+            style="
+              width: 100%;
+              padding: 10px;
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 10px;
+              background: #0f1628;
+              color: var(--text);
+              font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+                monospace;
+              margin-bottom: 12px;
+            "
+          />
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="loungeSearchInput">选择贵宾厅</label>
+          <div class="lounge-selector">
+            <input
+              type="text"
+              id="loungeSearchInput"
+              placeholder="搜索贵宾厅名称或代码..."
+              autocomplete="off"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 10px;
+                background: #0f1628;
+                color: var(--text);
+                font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+                  monospace;
+                margin-bottom: 0;
+              "
+            />
+            <div
+              class="lounge-dropdown"
+              id="loungeDropdown"
+              style="display: none"
+            >
+              <div class="lounge-options" id="loungeOptions"></div>
+            </div>
+            <input type="hidden" id="createLoungeCode" value="" />
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="createAccompanierNumber"
+            >陪同人数</label
+          >
+          <input
+            type="number"
+            id="createAccompanierNumber"
+            placeholder="0"
+            min="0"
+            max="10"
+            value="0"
+            style="
+              width: 100%;
+              padding: 10px;
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 10px;
+              background: #0f1628;
+              color: var(--text);
+              font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+                monospace;
+              margin-bottom: 12px;
+            "
+          />
+        </div>
+        <div class="actions">
+          <button
+            class="btn-primary"
+            id="btn-create-order"
+            style="
+              background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+              width: 100%;
+            "
+          >
+            创建订单
+          </button>
+        </div>
+        <div class="status" id="createOrderStatus" style="display: none"></div>
+        <div id="createOrderResult" style="display: none; margin-top: 12px">
+          <pre
+            id="createOrderOutput"
+            style="font-size: 11px; max-height: 200px"
+          ></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">二维码</div>
+        <div class="pill">有效期 30s · 自动刷新</div>
+      </div>
+      <div class="card-body">
+        <div class="input-group">
+          <label class="input-label" for="userNameInput">显示姓名</label>
+          <input
+            type="text"
+            id="userNameInput"
+            placeholder="请输入显示姓名（前端显示用）..."
+            style="
+              width: 100%;
+              padding: 10px;
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 10px;
+              background: #0f1628;
+              color: var(--text);
+              font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+                monospace;
+              margin-bottom: 12px;
+            "
+          />
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="typeSelect">服务类型</label>
+          <select
+            id="typeSelect"
+            style="
+              width: 100%;
+              padding: 10px;
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 10px;
+              background: #0f1628;
+              color: var(--text);
+              font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+                monospace;
+              margin-bottom: 12px;
+              cursor: pointer;
+            "
+          >
+            <option value="pp">悦途（pp）</option>
+            <option value="hy">盛大（hy）</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="orderUserNameInput"
+            >订单用户名（自动填充）</label
+          >
+          <input
+            type="text"
+            id="orderUserNameInput"
+            placeholder="执行完整流程后自动填充..."
+            readonly
+            style="
+              width: 100%;
+              padding: 10px;
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 10px;
+              background: #1a2332;
+              color: var(--muted);
+              font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+                monospace;
+              margin-bottom: 12px;
+              cursor: not-allowed;
+            "
+          />
+        </div>
+        <div class="actions" style="margin-bottom: 12px">
+          <button
+            class="btn-primary"
+            id="btn-generate-link"
+            style="
+              background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+            "
+          >
+            生成专属链接
+          </button>
+        </div>
+        <div class="qr-wrap" id="qrcode" style="min-height: 200px"></div>
+        <div class="qr-meta">
+          <div class="pill">
+            couponCode / couponNum：<span id="codeText">--</span>
+          </div>
+          <div class="countdown" id="countdown">--</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
