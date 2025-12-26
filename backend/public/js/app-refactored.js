@@ -75,6 +75,7 @@ class App {
 
     // 绑定事件
     this.bindEvents();
+    this.orderManager.setupPhoneAutoQuery();
 
     // 设置示例链接
     this.linkManager.setExampleUrl();

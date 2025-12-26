@@ -45,6 +45,9 @@ class FlowManager {
 
     this.statusManager.hideStatus();
 
+    const flowStart = Date.now();
+    let logStarted = false;
+
     try {
       const url = urlInput.value.trim();
       if (!url) {
@@ -52,9 +55,22 @@ class FlowManager {
         return;
       }
 
+      console.groupCollapsed("🧭 完整流程开始");
+      logStarted = true;
+      console.log("URL输入:", url);
+      console.log("当前缓存 data/sign:", {
+        dataLen: currentData ? currentData.length : 0,
+        signLen: currentSign ? currentSign.length : 0,
+      });
+
       this.statusManager.showStatus("正在执行完整流程...", "info");
 
       const params = this.apiService.parseUrl(url);
+      console.log("解析参数完成:", {
+        dataLen: params.data ? params.data.length : 0,
+        signLen: params.sign ? params.sign.length : 0,
+        hasSign: !!params.sign,
+      });
 
       if (!params.data) {
         this.statusManager.showStatus("链接中未找到 data 参数", "error");
@@ -71,6 +87,9 @@ class FlowManager {
       // 自动获取用户信息并填充到创建订单输入框（在URL解析之后）
       try {
         this.statusManager.showStatus("正在获取用户信息...", "info");
+        console.log("调用 getUserInfo...", {
+          cardTypeCode: window.CONFIG?.CARD_TYPE_CODE || "HXYX0803",
+        });
         const userInfoResp = await this.apiService.getUserInfo(
           window.CONFIG?.CARD_TYPE_CODE || "HXYX0803",
           params.data // 传递当前解析的data参数
@@ -78,6 +97,7 @@ class FlowManager {
 
         if (userInfoResp.ok && userInfoResp.data) {
           const userInfo = userInfoResp.data;
+          console.log("用户信息响应:", userInfoResp);
 
           // 自动填充创建订单的输入框
           const phoneNoInput = document.getElementById("createPhoneNoOrder");
@@ -121,7 +141,11 @@ class FlowManager {
         "info"
       );
 
+      console.log("调用 fullFlow API...");
+      const flowRequestStart = Date.now();
       const resp = await this.apiService.fullFlow(params.data, params.sign);
+      console.log("fullFlow 响应耗时(ms):", Date.now() - flowRequestStart);
+      console.log("fullFlow 响应摘要:", { ok: resp.ok, hasResult: !!resp.result });
 
       if (!resp.ok) {
         throw new Error(resp.error || "完整流程执行失败");
@@ -173,6 +197,11 @@ class FlowManager {
         outStep5
       );
       throw e;
+    } finally {
+      if (logStarted) {
+        console.log("完整流程结束，耗时(ms):", Date.now() - flowStart);
+        console.groupEnd();
+      }
     }
   }
 

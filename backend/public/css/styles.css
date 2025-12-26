@@ -146,6 +146,21 @@ select {
   flex-wrap: wrap;
 }
 
+.inline-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.inline-row input[type="tel"],
+.inline-row input[type="text"] {
+  flex: 1;
+}
+
+.inline-row button {
+  white-space: nowrap;
+}
+
 /* 移动端按钮布局适配 */
 @media (max-width: 480px) {
   .actions {
@@ -156,6 +171,15 @@ select {
     width: 100%;
     padding: 12px 14px;
     font-size: 14px;
+  }
+
+  .inline-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .inline-row button {
+    width: 100%;
   }
 }
 

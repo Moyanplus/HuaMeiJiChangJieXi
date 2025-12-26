@@ -24,11 +24,51 @@ class ApiService {
       body: JSON.stringify(body || {}),
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+    let rawText = "";
+    try {
+      rawText = await response.text();
+    } catch (_) {
+      rawText = "";
     }
 
-    return response.json();
+    let data = null;
+    if (rawText) {
+      try {
+        data = JSON.parse(rawText);
+      } catch (_) {
+        data = { raw: rawText };
+      }
+    }
+
+    if (!data || typeof data !== "object") {
+      data = {};
+    }
+
+    if (typeof data.ok !== "boolean") {
+      data.ok = response.ok;
+    }
+    data.status = response.status;
+
+    if (!response.ok) {
+      data.error =
+        data.error ||
+        data.msg ||
+        data.resultDesc ||
+        data.result?.msg ||
+        data.result?.resultDesc ||
+        `HTTP ${response.status}`;
+    }
+
+    if (data.ok === false && !data.error) {
+      data.error =
+        data.msg ||
+        data.resultDesc ||
+        data.result?.msg ||
+        data.result?.resultDesc ||
+        "请求失败";
+    }
+
+    return data;
   }
 
   /**

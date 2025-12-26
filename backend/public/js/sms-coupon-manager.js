@@ -124,11 +124,13 @@ class SmsCouponManager {
 
     this.showStatus("正在发送验证码...", "info");
     try {
+      console.log("短信发送请求:", { orderId });
       const resp = await this.apiService.sendSmsCode(orderId);
       if (!resp.ok) {
         throw new Error(resp.error || "短信发送失败");
       }
       this.lastOrderId = orderId;
+      console.log("短信发送响应:", resp);
       this.showStatus("验证码已发送，请查收短信", "success");
     } catch (e) {
       this.showStatus(
@@ -157,6 +159,7 @@ class SmsCouponManager {
 
     this.showStatus("正在验证验证码...", "info");
     try {
+      console.log("短信验证请求:", { orderId, smsCodeLen: smsCode.length });
       const verifyResp = await this.apiService.verifySmsCode(orderId, smsCode);
       if (!verifyResp.ok) {
         throw new Error(verifyResp.error || "验证码验证失败");
@@ -167,6 +170,7 @@ class SmsCouponManager {
         throw new Error("未获取到smsToken");
       }
 
+      console.log("短信验证响应:", verifyResp);
       this.setSmsToken(smsToken);
       this.lastOrderId = orderId;
 
@@ -188,6 +192,7 @@ class SmsCouponManager {
   async fetchCoupon(orderId, smsToken) {
     this.showStatus("正在获取二维码...", "info");
     try {
+      console.log("短信取券请求:", { orderId, smsTokenPreview: smsToken.slice(0, 8) });
       const resp = await this.apiService.fetchCouponBySms(orderId, smsToken);
       if (!resp.ok) {
         throw new Error(resp.error || "获取优惠券失败");
@@ -199,6 +204,7 @@ class SmsCouponManager {
       }
 
       const expirySeconds = this.resolveExpirySeconds(resp);
+      console.log("短信取券响应:", { codePreview: String(code).slice(0, 6), expirySeconds });
       if (expirySeconds <= 0) {
         this.showStatus("二维码已过期，请重新获取验证码", "warning");
         return;

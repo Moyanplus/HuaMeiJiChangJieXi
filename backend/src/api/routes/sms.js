@@ -52,6 +52,7 @@ function createSmsRouter() {
     try {
       const { orderId } = req.body || {};
       if (!orderId) {
+        logger.warn("sms send missing orderId");
         return res
           .status(400)
           .json({ ok: false, error: "orderId is required" });
@@ -59,6 +60,10 @@ function createSmsRouter() {
 
       const result = await sendSmsCode(orderId);
       if (!isSuccessResult(result)) {
+        logger.warn("sms send failed", {
+          orderId,
+          result: result && (result.msg || result.resultDesc || result.errorCode),
+        });
         return res.status(400).json({
           ok: false,
           error: result?.msg || result?.resultDesc || "短信发送失败",

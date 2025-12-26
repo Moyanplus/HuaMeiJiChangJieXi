@@ -225,9 +225,6 @@
 
       <!-- 查询订单标签页 -->
       <div class="tab-content" id="tab-query">
-        <!-- 状态消息 -->
-        <div class="status" id="queryStatusMsg" style="display: none"></div>
-
         <!-- 订单列表 -->
         <div class="card">
           <div class="card-header">
@@ -264,11 +261,20 @@
                 placeholder="请输入订单号（短信验证用）..."
               />
             </div>
-            <div class="actions">
-              <button class="btn-secondary" id="btn-send-sms">
-                发送验证码
-              </button>
+            <div class="input-group">
+              <label class="input-label" for="queryPhoneNo">手机号码</label>
+              <div class="inline-row">
+                <input
+                  type="tel"
+                  id="queryPhoneNo"
+                  placeholder="解析失败可手动输入手机号..."
+                />
+                <button class="btn-secondary" id="btn-send-sms">
+                  发送验证码
+                </button>
+              </div>
             </div>
+            <div class="status" id="queryStatusMsg" style="display: none"></div>
             <div class="input-group">
               <label class="input-label" for="smsCodeInputQR">短信验证码</label>
               <input

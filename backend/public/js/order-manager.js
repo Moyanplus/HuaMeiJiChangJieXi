@@ -58,6 +58,7 @@ class OrderManager {
             "个订单"
           );
           console.log("订单数据详情:", this.cachedOrders);
+          this.autoFillSmsOrderId(this.cachedOrders);
 
           // 自动填充查询订单的手机号码
           this.autoFillQueryPhoneNumber(result);
@@ -94,6 +95,7 @@ class OrderManager {
         }
 
         console.log("查询订单功能：已设置订单数据，不回退到步骤2");
+        this.autoFillSmsOrderId(this.cachedOrders);
 
         // 自动填充查询订单的手机号码
         this.autoFillQueryPhoneNumber(result);
@@ -188,40 +190,298 @@ class OrderManager {
    */
   autoFillQueryPhoneNumber(result) {
     try {
-      // 从步骤1的结果中提取手机号码
-      const step1Data = result.step1_decrypt_data;
-      console.log("步骤1数据:", step1Data);
+      const queryPhoneInput = document.getElementById("queryPhoneNo");
+      if (!queryPhoneInput) return;
 
-      if (step1Data && step1Data.data) {
-        let phone = null;
+      const step1Result = result.step1_decrypt_data;
+      const step3Result = result.step3_orderId;
+      console.log("步骤1数据:", step1Result);
+      console.log("步骤3数据:", step3Result);
 
-        // 尝试从步骤1的data中提取手机号
-        if (typeof step1Data.data === "string") {
-          try {
-            const parsedData = JSON.parse(step1Data.data);
-            phone = parsedData.phone;
-          } catch (e) {
-            console.warn("解析步骤1数据失败:", e.message);
-          }
-        } else if (step1Data.data && typeof step1Data.data === "object") {
-          phone = step1Data.data.phone;
+      const step1Phone = this.extractPhoneFromPayload(
+        step1Result && step1Result.data ? step1Result.data : step1Result
+      );
+      const step3Phone = this.extractPhoneFromPayload(
+        step3Result && step3Result.data ? step3Result.data : step3Result
+      );
+
+      const resolvedPhone = step1Phone.phone || step3Phone.phone;
+      const maskedHint = step1Phone.masked || step3Phone.masked;
+      const merged = this.mergeMaskedPhones(
+        step1Phone.masked,
+        step3Phone.masked
+      );
+
+      console.log("手机号解析汇总:", {
+        step1: step1Phone,
+        step3: step3Phone,
+        merged,
+      });
+
+      if (resolvedPhone && !queryPhoneInput.value) {
+        queryPhoneInput.value = resolvedPhone;
+        console.log("✅ 已自动填充查询订单手机号码:", resolvedPhone);
+        this.statusManager.showQueryStatus(
+          `已自动填充手机号: ${resolvedPhone}`,
+          "success"
+        );
+        return;
+      }
+
+      if (!resolvedPhone && merged.phone && !queryPhoneInput.value) {
+        queryPhoneInput.value = merged.phone;
+        console.log("✅ 已合并脱敏手机号:", merged.phone);
+        this.statusManager.showQueryStatus(
+          `已合并手机号: ${merged.phone}`,
+          "success"
+        );
+        return;
+      }
+
+      if (!resolvedPhone && !queryPhoneInput.value) {
+        const hint = merged.masked || maskedHint;
+        if (hint) {
+          queryPhoneInput.placeholder = `已解析到脱敏手机号：${hint}，请手动补全`;
         }
-
-        if (phone) {
-          const queryPhoneInput = document.getElementById("queryPhoneNo");
-          if (queryPhoneInput && !queryPhoneInput.value) {
-            queryPhoneInput.value = phone;
-            console.log("✅ 已自动填充查询订单手机号码:", phone);
-          }
-        } else {
-          console.log("⚠️ 步骤1中未找到手机号码");
-        }
-      } else {
-        console.log("⚠️ 步骤1数据为空或格式不正确");
+        this.statusManager.showQueryStatus(
+          "未解析到完整手机号，请手动输入",
+          "warning"
+        );
       }
     } catch (error) {
       console.error("自动填充手机号码失败:", error);
     }
+  }
+
+  /**
+   * 绑定手机号输入框的自动查询逻辑。
+   * @returns {void}
+   */
+  setupPhoneAutoQuery() {
+    const input = document.getElementById("queryPhoneNo");
+    if (!input || input.__autoQueryBound) return;
+    input.__autoQueryBound = true;
+
+    const handler = () => {
+      const raw = input.value.trim();
+      if (!raw) return;
+      const normalized = this.normalizePhone(raw);
+      if (!normalized) {
+        this.statusManager.showQueryStatus("手机号格式不完整", "warning");
+        return;
+      }
+      if (this.lastQueryPhone === normalized) return;
+      this.lastQueryPhone = normalized;
+      input.value = normalized;
+      this.fetchOrdersByPhone(normalized);
+    };
+
+    input.addEventListener("blur", handler);
+    input.addEventListener("change", handler);
+    input.addEventListener("keyup", (event) => {
+      if (event.key === "Enter") handler();
+    });
+  }
+
+  /**
+   * 根据手机号查询订单并更新缓存。
+   * @param {string} phoneNo - 手机号
+   * @returns {Promise<void>}
+   */
+  async fetchOrdersByPhone(phoneNo) {
+    this.statusManager.showQueryStatus("正在查询订单...", "info");
+    try {
+      console.log("发起手机号查询:", { phoneNo });
+      const resp = await this.apiService.queryOrders({ phoneNo });
+      if (!resp.ok) {
+        throw new Error(resp.error || "查询订单失败");
+      }
+      const orders = resp?.result?.orders || [];
+      this.cachedOrders = orders;
+      this.autoFillSmsOrderId(orders);
+      console.log("手机号查询响应:", {
+        ok: resp?.ok,
+        total: orders.length,
+      });
+
+      if (orders.length > 0) {
+        this.displayOrders(orders);
+        this.statusManager.showQueryStatus(
+          `查询成功，共 ${orders.length} 个订单`,
+          "success"
+        );
+      } else {
+        this.displayOrders([]);
+        this.statusManager.showQueryStatus("未查询到订单", "warning");
+      }
+    } catch (error) {
+      console.error("查询订单失败:", error);
+      this.displayOrders([]);
+      this.statusManager.showQueryStatus(
+        "查询失败: " + (error && error.message ? error.message : error),
+        "error"
+      );
+    }
+  }
+
+  /**
+   * 提取手机号字段并规范化。
+   * @param {Object|string} payload - 待解析数据
+   * @returns {{phone: string|null, masked: string|null}}
+   */
+  extractPhoneFromPayload(payload) {
+    const normalized = this.normalizePayload(payload);
+    if (!normalized || typeof normalized !== "object") {
+      return { phone: null, masked: null };
+    }
+
+    const keys = [
+      "phone",
+      "phoneNo",
+      "mobileNo",
+      "mobile",
+      "telephone",
+      "tel",
+      "phoneNumber",
+      "mobilePhone",
+      "custPhone",
+      "userPhone",
+      "contactPhone",
+    ];
+    const targets = [normalized];
+    if (normalized.data && typeof normalized.data === "object") {
+      targets.push(normalized.data);
+    }
+
+    let masked = null;
+    for (const obj of targets) {
+      for (const key of keys) {
+        if (obj && obj[key]) {
+          const value = obj[key];
+          const phone = this.normalizePhone(value);
+          if (phone) {
+            return { phone, masked: null };
+          }
+          if (!masked && typeof value === "string" && value.includes("*")) {
+            masked = value;
+          }
+        }
+      }
+    }
+
+    return { phone: null, masked };
+  }
+
+  /**
+   * 合并两个脱敏手机号片段。
+   * @param {string|null} maskedA - 脱敏手机号
+   * @param {string|null} maskedB - 脱敏手机号
+   * @returns {{phone: string|null, masked: string|null}}
+   */
+  mergeMaskedPhones(maskedA, maskedB) {
+    const a = this.sanitizeMaskedPhone(maskedA);
+    const b = this.sanitizeMaskedPhone(maskedB);
+    if (!a && !b) return { phone: null, masked: null };
+    if (a && !b) return { phone: null, masked: a };
+    if (!a && b) return { phone: null, masked: b };
+    if (a.length !== b.length) return { phone: null, masked: a };
+
+    let merged = "";
+    for (let i = 0; i < a.length; i += 1) {
+      const ca = a[i];
+      const cb = b[i];
+      if (ca !== "*" && cb !== "*" && ca !== cb) {
+        return { phone: null, masked: a };
+      }
+      if (ca !== "*") {
+        merged += ca;
+      } else if (cb !== "*") {
+        merged += cb;
+      } else {
+        merged += "*";
+      }
+    }
+
+    if (!merged.includes("*")) {
+      return { phone: merged, masked: null };
+    }
+    return { phone: null, masked: merged };
+  }
+
+  /**
+   * 规范化脱敏手机号（仅保留数字和 *）。
+   * @param {string|null} value - 脱敏手机号
+   * @returns {string|null}
+   */
+  sanitizeMaskedPhone(value) {
+    if (!value) return null;
+    const cleaned = String(value).replace(/[^\d*]/g, "");
+    if (!cleaned || cleaned.length < 6) return null;
+    return cleaned;
+  }
+
+  /**
+   * 规范化手机号（仅保留数字并校验长度）。
+   * @param {string} value - 原始手机号
+   * @returns {string|null} 规范化手机号
+   */
+  normalizePhone(value) {
+    if (!value) return null;
+    const digits = String(value).replace(/\D/g, "");
+    if (digits.length === 11) return digits;
+    if (digits.length === 13 && digits.startsWith("86")) {
+      return digits.slice(2);
+    }
+    if (digits.length === 14 && digits.startsWith("0086")) {
+      return digits.slice(4);
+    }
+    return null;
+  }
+
+  /**
+   * 解析可能为 JSON 字符串的数据。
+   * @param {Object|string} payload - 原始数据
+   * @returns {Object|string|null}
+   */
+  normalizePayload(payload) {
+    if (typeof payload !== "string") return payload;
+    try {
+      return JSON.parse(payload);
+    } catch (e) {
+      console.warn("解析手机号数据失败:", e.message);
+      return null;
+    }
+  }
+
+  /**
+   * 自动填充短信订单号（h5OrderNo）。
+   * @param {Array<Object>} orders - 订单数组
+   * @returns {void}
+   */
+  autoFillSmsOrderId(orders) {
+    const orderIdInput = document.getElementById("orderIdInputQR");
+    if (!orderIdInput || orderIdInput.value) return;
+    if (!orders || orders.length === 0) return;
+
+    const resolved = this.resolveSmsOrderId(orders[0]);
+    if (resolved && resolved.value) {
+      orderIdInput.value = resolved.value;
+      console.log("✅ 已自动填充短信订单号:", resolved);
+    }
+  }
+
+  /**
+   * 解析短信订单号（优先 h5OrderNo）。
+   * @param {Object} order - 订单对象
+   * @returns {string|null} 短信订单号
+   */
+  resolveSmsOrderId(order) {
+    if (!order || typeof order !== "object") return null;
+    if (order.h5OrderNo) return { value: order.h5OrderNo, source: "h5OrderNo" };
+    if (order.h5OrderId) return { value: order.h5OrderId, source: "h5OrderId" };
+    if (order.orderNo) return { value: order.orderNo, source: "orderNo" };
+    if (order.orderId) return { value: order.orderId, source: "orderId" };
+    return null;
   }
 
   /**
@@ -247,7 +507,6 @@ class OrderManager {
    * @returns {Promise<void>}
    */
   async handleQueryOrders() {
-    // 查询订单模块只显示从链接解析获取的订单数据，不调用API
     if (this.cachedOrders && this.cachedOrders.length > 0) {
       console.log("显示缓存的订单数据");
       this.displayOrders(this.cachedOrders);
@@ -255,12 +514,46 @@ class OrderManager {
         `显示订单数据，共 ${this.cachedOrders.length} 个订单`,
         "success"
       );
-    } else {
-      console.log("没有缓存的订单数据");
+      return;
+    }
+
+    const phoneNo = document.getElementById("queryPhoneNo")?.value?.trim();
+    if (!phoneNo) {
+      console.log("没有缓存的订单数据且未输入手机号");
       this.displayOrders([]);
       this.statusManager.showQueryStatus(
-        "暂无订单数据，请先执行链接解析获取订单信息",
+        "未解析到手机号，请手动输入后查询",
         "warning"
+      );
+      return;
+    }
+
+    this.statusManager.showQueryStatus("正在查询订单...", "info");
+    try {
+      const resp = await this.apiService.queryOrders({ phoneNo });
+      if (!resp.ok) {
+        throw new Error(resp.error || "查询订单失败");
+      }
+      const orders = resp?.result?.orders || [];
+      this.cachedOrders = orders;
+      this.autoFillSmsOrderId(orders);
+
+      if (orders.length > 0) {
+        this.displayOrders(orders);
+        this.statusManager.showQueryStatus(
+          `查询成功，共 ${orders.length} 个订单`,
+          "success"
+        );
+      } else {
+        this.displayOrders([]);
+        this.statusManager.showQueryStatus("未查询到订单", "warning");
+      }
+    } catch (error) {
+      console.error("查询订单失败:", error);
+      this.displayOrders([]);
+      this.statusManager.showQueryStatus(
+        "查询失败: " + (error && error.message ? error.message : error),
+        "error"
       );
     }
   }
