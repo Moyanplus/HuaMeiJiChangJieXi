@@ -162,8 +162,8 @@ class ApiService {
    * @param {string} smsCode - 短信验证码
    * @returns {Promise<Object>} 验证结果
    */
-  async verifySmsCode(orderId, smsCode) {
-    return this.post("/api/sms/verify", { orderId, smsCode });
+  async verifySmsCode(orderId, smsCode, extra = {}) {
+    return this.post("/api/sms/verify", { orderId, smsCode, ...extra });
   }
 
   /**

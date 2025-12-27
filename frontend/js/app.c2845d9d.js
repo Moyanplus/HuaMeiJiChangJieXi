@@ -166,91 +166,7 @@
                     8,
                     ["qrData", "timeLeft", "onRefreshQrCode"]
                   ),
-                  (0, o.Lk)("div", { class: "sms-panel" }, [
-                    (0, o.Lk)("div", { class: "sms-row" }, [
-                      t[11] ||
-                        (t[11] = (0, o.Lk)(
-                          "div",
-                          { class: "sms-label" },
-                          "短信订单号（h5OrderNo）",
-                          -1
-                        )),
-                      (0, o.Lk)("input", {
-                        id: "smsOrderIdInput",
-                        class: "sms-input",
-                        type: "text",
-                        placeholder: "请输入订单号...",
-                      }),
-                    ]),
-                    (0, o.Lk)("div", { class: "sms-actions" }, [
-                      (0, o.Lk)(
-                        "button",
-                        {
-                          class: "sms-btn",
-                          onClick:
-                            t[12] ||
-                            (t[12] = (...e) =>
-                              E.sendSmsCode && E.sendSmsCode(...e)),
-                        },
-                        "发送验证码",
-                        8,
-                        ["onClick"]
-                      ),
-                    ]),
-                    (0, o.Lk)("div", { class: "sms-row" }, [
-                      t[13] ||
-                        (t[13] = (0, o.Lk)(
-                          "div",
-                          { class: "sms-label" },
-                          "短信验证码",
-                          -1
-                        )),
-                      (0, o.Lk)("input", {
-                        id: "smsCodeInput",
-                        class: "sms-input",
-                        type: "text",
-                        placeholder: "请输入短信验证码...",
-                      }),
-                    ]),
-                    (0, o.Lk)("div", { class: "sms-actions" }, [
-                      (0, o.Lk)(
-                        "button",
-                        {
-                          class: "sms-btn secondary",
-                          onClick:
-                            t[14] ||
-                            (t[14] = (...e) =>
-                              E.verifySmsCode && E.verifySmsCode(...e)),
-                        },
-                        "确认获取二维码",
-                        8,
-                        ["onClick"]
-                      ),
-                    ]),
-                    (0, o.Lk)("div", { class: "sms-token" }, [
-                      t[15] || (t[15] = (0, o.eW)("smsToken：", -1)),
-                      (0, o.Lk)(
-                        "span",
-                        { class: "sms-token-value" },
-                        (0, i.v_)(q.smsToken || "--"),
-                        1
-                      ),
-                    ]),
-                    q.smsStatus
-                      ? ((0, o.uX)(),
-                        (0, o.CE)(
-                          "div",
-                          {
-                            class: (0, i.C4)([
-                              "sms-status",
-                              q.smsStatusType,
-                            ]),
-                          },
-                          (0, i.v_)(q.smsStatus),
-                          3
-                        ))
-                      : (0, o.Q3)("", !0),
-                  ]),
+                  
                   (0, o.Lk)("div", h, [
                     (0, o.Lk)("div", m, [
                       t[3] ||
@@ -382,22 +298,35 @@
               s.qrData
                 ? ((0, o.uX)(),
                   (0, o.CE)("div", N, [
-                    (0, o.Lk)(
-                      "img",
+                    (0, o.bF)(
+                      z(),
                       {
-                        width: "133px",
-                        height: "133px",
-                        style: {
-                          display: "block",
-                        },
-                        src: s.qrData,
+                        value: s.qrData,
+                        size: 133,
+                        level: "H",
+                        margin: 1,
+                        renderAs: "canvas",
+                        background: "#ffffff",
+                        foreground: "#000000",
                       },
                       null,
                       8,
-                      j
+                      ["value"]
                     ),
                   ]))
-                : (0, o.Q3)("", !0),
+                : ((0, o.uX)(),
+                  (0, o.CE)("div",
+                    {
+                      class: "qr-expired",
+                      style: {
+                        color: "#ff6b6b",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        padding: "12px 0",
+                      },
+                    },
+                    "二维码已过期"
+                  )),
               (0, o.Lk)("div", A, [
                 (0, o.Lk)(
                   "img",
@@ -713,17 +642,44 @@
                 ve()
                   .then((e) => {
                     console.log(e);
-                    let t = e.data.data;
-                    (this.qrData = t.qrData),
-                      (this.userName = t.userName),
-                      (this.code = t.code),
-                      (this.startDate = t.startData),
-                      (this.stopDate = t.stopDate),
-                      (this.orderId = t.orderId),
+                    const t = e && e.data ? e.data : {};
+                    if (!t.ok || !t.data || !t.data.couponCode) {
+                      (this.qrData = ""),
+                        (this.userName = t.data ? t.data.userName : ""),
+                        (this.code = "二维码已过期"),
+                        (this.startDate = ""),
+                        (this.stopDate = ""),
+                        (this.orderId = ""),
+                        (this.timeLeft = 0),
+                        (this.autoRefreshEnabled = !1),
+                        (this.smsFlowEnabled = !1);
+                      return;
+                    }
+                    let n = t.data.couponCode || t.data.code;
+                    (this.qrData = n || ""),
+                      (this.userName = t.data.userName),
+                      (this.code = n || t.data.code),
+                      (this.startDate = t.data.startData),
+                      (this.stopDate = t.data.stopDate),
+                      (this.orderId = t.data.orderId),
                       (this.timeLeft = 30);
                   })
                   .catch((e) => {
                     console.log("请求失败:", e);
+                    const t =
+                      e && e.response && e.response.data ? e.response.data : {};
+                    if (t && t.code === "COUPON_EXPIRED") {
+                      (this.qrData = ""),
+                        (this.userName = ""),
+                        (this.code = "二维码已过期"),
+                        (this.startDate = ""),
+                        (this.stopDate = ""),
+                        (this.orderId = ""),
+                        (this.timeLeft = 0),
+                        (this.autoRefreshEnabled = !1),
+                        (this.smsFlowEnabled = !1);
+                      return;
+                    }
                     // 显示加载失败状态
                     this.qrData = "";
                     this.userName = "加载失败";

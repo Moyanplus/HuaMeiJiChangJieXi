@@ -26,7 +26,10 @@ class VipRoomDatabase {
             reject(err);
           } else {
             console.log("✅ 数据库连接成功");
-            this.createTables().then(resolve).catch(reject);
+            this.createTables()
+              .then(() => this.ensureUserDataColumns())
+              .then(resolve)
+              .catch(reject);
           }
         });
       } catch (err) {
@@ -142,6 +145,61 @@ class VipRoomDatabase {
           console.log("✅ 数据表创建成功");
           resolve();
         }
+      });
+    });
+  }
+
+  /**
+   * 确保 user_data 表包含短信相关字段。
+   * @returns {Promise<void>}
+   */
+  ensureUserDataColumns() {
+    return new Promise((resolve, reject) => {
+      this.db.all("PRAGMA table_info(user_data)", (err, rows) => {
+        if (err) {
+          console.error("读取表结构失败:", err.message);
+          reject(err);
+          return;
+        }
+
+        const existing = new Set(rows.map((row) => row.name));
+        const alterStatements = [];
+
+        if (!existing.has("smsToken")) {
+          alterStatements.push(
+            "ALTER TABLE user_data ADD COLUMN smsToken TEXT"
+          );
+        }
+        if (!existing.has("smsTokenUpdatedAt")) {
+          alterStatements.push(
+            "ALTER TABLE user_data ADD COLUMN smsTokenUpdatedAt DATETIME"
+          );
+        }
+        if (!existing.has("smsTokenExpiresAt")) {
+          alterStatements.push(
+            "ALTER TABLE user_data ADD COLUMN smsTokenExpiresAt DATETIME"
+          );
+        }
+
+        if (alterStatements.length === 0) {
+          resolve();
+          return;
+        }
+
+        let remaining = alterStatements.length;
+        this.db.serialize(() => {
+          alterStatements.forEach((statement) => {
+            this.db.run(statement, (alterErr) => {
+              if (alterErr) {
+                console.error("更新表结构失败:", alterErr.message);
+              }
+              remaining -= 1;
+              if (remaining <= 0) {
+                resolve();
+              }
+            });
+          });
+        });
       });
     });
   }
@@ -266,6 +324,76 @@ class VipRoomDatabase {
           reject(err);
         } else {
           resolve(rows);
+        }
+      });
+    });
+  }
+
+  /**
+   * 根据订单号写入短信 token。
+   * @param {Object} payload - smsToken 数据
+   * @param {string} payload.orderId - 订单号（通常为 h5OrderNo）
+   * @param {string} payload.smsToken - 短信 token
+   * @param {string|null} payload.expiresAt - 过期时间（ISO）
+   * @returns {Promise<{changes: number}>}
+   */
+  updateSmsTokenByOrderId({ orderId, smsToken, expiresAt }) {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        UPDATE user_data
+        SET smsToken = ?,
+            smsTokenUpdatedAt = CURRENT_TIMESTAMP,
+            smsTokenExpiresAt = ?
+        WHERE h5OrderNo = ? OR orderNo = ? OR h5OrderId = ?
+      `;
+
+      const params = [smsToken, expiresAt, orderId, orderId, orderId];
+      this.db.run(sql, params, function (err) {
+        if (err) {
+          console.error("更新短信token失败:", err.message);
+          reject(err);
+        } else {
+          resolve({ changes: this.changes });
+        }
+      });
+    });
+  }
+
+  /**
+   * 短信验证码流程补充写入用户数据（缺失时）。
+   * @param {Object} payload - 用户数据
+   * @param {string} payload.userName - 用户姓名（用于查询）
+   * @param {string} payload.orderId - 订单号（h5OrderNo）
+   * @param {string} payload.telephone - 手机号
+   * @returns {Promise<{id: number, changes: number}>}
+   */
+  insertSmsUserData({ userName, orderId, telephone }) {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        INSERT INTO user_data (
+          userName, orderNo, serverName, telephone,
+          h5OrderNo, status, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      `;
+
+      const params = [
+        userName,
+        orderId,
+        "机场贵宾厅",
+        telephone || null,
+        orderId,
+        2,
+      ];
+
+      this.db.run(sql, params, function (err) {
+        if (err) {
+          console.error("写入短信用户数据失败:", err.message);
+          reject(err);
+        } else {
+          resolve({
+            id: this.lastID,
+            changes: this.changes,
+          });
         }
       });
     });

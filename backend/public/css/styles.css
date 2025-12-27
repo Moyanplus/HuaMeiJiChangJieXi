@@ -1,11 +1,23 @@
 :root {
   --bg: #0b1020;
   --card: #121a2b;
+  --card-strong: #0f1628;
+  --card-soft: rgba(18, 26, 43, 0.85);
   --muted: #8aa0c7;
   --text: #e6eefc;
   --accent: #4f8cff;
   --accent2: #00d4ff;
   --danger: #ff6b6b;
+  --success: #4caf50;
+  --warning: #ffd666;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-soft: 0 6px 16px rgba(0, 0, 0, 0.25);
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 16px;
+  --focus: rgba(79, 140, 255, 0.45);
 }
 
 * {
@@ -14,6 +26,7 @@
 
 body {
   margin: 0;
+  background-color: var(--bg);
   background: linear-gradient(160deg, #0b1020 0%, #111a31 100%);
   color: var(--text);
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -22,7 +35,7 @@ body {
 }
 
 .container {
-  max-width: 800px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 16px;
 }
@@ -66,25 +79,26 @@ body {
 .pill {
   padding: 4px 8px;
   background: #0f1a33;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   border-radius: 999px;
   color: #a6c1ff;
   font-size: 12px;
 }
 
 .card {
-  background: rgba(18, 26, 43, 0.85);
+  background: var(--card-soft);
   backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow);
   overflow: hidden;
   margin-bottom: 18px;
 }
 
 .card-header {
   padding: 12px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border);
+  background: rgba(15, 22, 40, 0.7);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -93,6 +107,7 @@ body {
 .card-title {
   font-size: 14px;
   color: var(--muted);
+  letter-spacing: 0.2px;
 }
 
 .card-body {
@@ -118,12 +133,33 @@ textarea,
 select {
   width: 100%;
   padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  background: #0f1628;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  background: var(--card-strong);
   color: var(--text);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  outline: none;
+}
+
+input[type="url"]::placeholder,
+input[type="text"]::placeholder,
+input[type="tel"]::placeholder,
+input[type="number"]::placeholder,
+textarea::placeholder {
+  color: rgba(138, 160, 199, 0.7);
+}
+
+input[type="url"]:focus,
+input[type="text"]:focus,
+input[type="tel"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus);
+  background: #111c33;
 }
 
 /* 移动端输入框适配 */
@@ -187,13 +223,15 @@ button {
   appearance: none;
   border: 0;
   padding: 8px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-s);
   color: #081120;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-soft);
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease,
+    background 0.2s ease, border-color 0.2s ease;
 }
 
 .btn-primary {
@@ -201,9 +239,20 @@ button {
   color: white;
 }
 
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(79, 140, 255, 0.35);
+}
+
 .btn-secondary {
   background: #24324d;
   color: #e9f3ff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-1px);
+  border-color: rgba(79, 140, 255, 0.35);
 }
 
 .btn-danger {
@@ -212,14 +261,31 @@ button {
   border: 1px solid rgba(255, 107, 129, 0.35);
 }
 
+.btn-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(255, 107, 129, 0.25);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button:disabled,
+button[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
 .qr-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 12px;
-  background: #0f1628;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  background: var(--card-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
   min-height: 240px;
 }
 
@@ -251,6 +317,14 @@ button {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
+  align-items: start;
+}
+
+.result-grid pre {
+  max-height: none;
+  overflow: visible;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* 移动端网格布局适配 */
@@ -266,15 +340,15 @@ button {
 
 pre {
   margin: 0;
-  background: #0f1628;
+  background: var(--card-strong);
   color: #cfe3ff;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
   padding: 10px;
   max-height: 300px;
   overflow: auto;
   font-size: 12px;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 /* 移动端代码块适配 */
@@ -288,28 +362,28 @@ pre {
 
 .status {
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-s);
   background: #0f1a33;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   margin-bottom: 16px;
 }
 
 .status.success {
-  background: #0f2a1a;
-  border-color: rgba(76, 175, 80, 0.3);
-  color: #81c784;
+  background: rgba(76, 175, 80, 0.12);
+  border-color: rgba(76, 175, 80, 0.35);
+  color: #a6e5b0;
 }
 
 .status.error {
-  background: #2a0f0f;
-  border-color: rgba(244, 67, 54, 0.3);
-  color: #e57373;
+  background: rgba(244, 67, 54, 0.12);
+  border-color: rgba(244, 67, 54, 0.35);
+  color: #ff9f9f;
 }
 
 .status.warning {
-  background: #2a1f0f;
-  border-color: rgba(255, 193, 7, 0.3);
-  color: #ffd54f;
+  background: rgba(255, 193, 7, 0.12);
+  border-color: rgba(255, 193, 7, 0.35);
+  color: #ffd27d;
 }
 
 /* 移动端额外优化 */
@@ -355,10 +429,10 @@ pre {
   top: 100%;
   left: 0;
   right: 0;
-  background: #0f1628;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card-strong);
+  border: 1px solid var(--border);
   border-top: none;
-  border-radius: 0 0 10px 10px;
+  border-radius: 0 0 var(--radius-s) var(--radius-s);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   z-index: 1000;
   max-height: 300px;
@@ -471,7 +545,7 @@ pre {
 .tab-chip {
   padding: 8px 16px;
   background: rgba(18, 26, 43, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
   border-radius: 20px;
   color: var(--muted);
   cursor: pointer;
@@ -571,17 +645,17 @@ input[readonly]:focus {
 }
 
 .order-item {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 8px;
+  background: var(--card-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
   padding: 16px;
   margin-bottom: 12px;
   transition: all 0.3s ease;
 }
 
 .order-item:hover {
-  border-color: #4f8cff;
-  box-shadow: 0 2px 8px rgba(79, 140, 255, 0.2);
+  border-color: rgba(79, 140, 255, 0.5);
+  box-shadow: 0 8px 20px rgba(79, 140, 255, 0.15);
 }
 
 .order-header {
@@ -593,7 +667,7 @@ input[readonly]:focus {
 
 .order-id {
   font-weight: 600;
-  color: #4f8cff;
+  color: var(--accent);
   font-size: 16px;
 }
 
@@ -636,13 +710,13 @@ input[readonly]:focus {
 
 .order-detail-label {
   font-size: 12px;
-  color: #888;
+  color: var(--muted);
   margin-bottom: 4px;
 }
 
 .order-detail-value {
   font-size: 14px;
-  color: #fff;
+  color: var(--text);
   font-weight: 500;
 }
 
@@ -677,7 +751,7 @@ input[readonly]:focus {
 .empty-state {
   text-align: center;
   padding: 40px 20px;
-  color: #888;
+  color: var(--muted);
 }
 
 .empty-icon {
@@ -690,7 +764,7 @@ input[readonly]:focus {
   font-size: 18px;
   font-weight: 500;
   margin-bottom: 8px;
-  color: #aaa;
+  color: #b5c7e6;
 }
 
 .empty-desc {
@@ -923,7 +997,7 @@ input[readonly]:focus {
 
 .order-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 25px rgba(79, 140, 255, 0.18);
 }
 
 /* 更换贵宾厅按钮样式 */

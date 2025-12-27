@@ -78,6 +78,9 @@ module.exports = {
     VERSION: parseInt(process.env.QR_VERSION) || 10,
   },
 
+  // 短信 token 有效期（秒）
+  SMS_TOKEN_TTL_SECONDS: parseInt(process.env.SMS_TOKEN_TTL_SECONDS) || 300,
+
   DEFAULT_HEADERS: {
     origin: "https://h5.schengle.com",
     referer: "https://h5.schengle.com/ShengDaHXZHJSJ/",

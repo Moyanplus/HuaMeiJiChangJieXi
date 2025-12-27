@@ -140,6 +140,14 @@ function createVipRoomRouter({ db } = {}) {
         });
       }
 
+      if (!vipRoomResult.data || !vipRoomResult.data.couponCode) {
+        return res.status(410).json({
+          ok: false,
+          error: "二维码已过期",
+          code: "COUPON_EXPIRED",
+        });
+      }
+
       res.json({ ok: true, data: vipRoomResult.data });
     } catch (e) {
       logger.error("vip-room error", e && e.message ? e.message : e);

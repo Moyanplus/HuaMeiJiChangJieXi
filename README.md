@@ -72,7 +72,7 @@ npm run manage              # 管理脚本（更多命令）
 - `POST /api/coupon` 根据 `orderNo` 获取优惠券并生成二维码
 - `POST /api/coupon-from-url` 通过订单数据获取优惠券
 - `POST /api/sms/send` 发送短信验证码（`orderId`）
-- `POST /api/sms/verify` 验证短信验证码，返回 `smsToken`
+- `POST /api/sms/verify` 验证短信验证码，返回 `smsToken`（并写入数据库）
 - `POST /api/coupon-by-sms` 使用 `orderId + smsToken` 获取券与二维码（含有效期）
 
 一键流程：
@@ -104,6 +104,63 @@ npm run manage              # 管理脚本（更多命令）
 4. 调 `POST /api/create-order` 创建订单
 5. 调 `POST /api/coupon` 拿券并生成二维码  
    或直接调用 `POST /api/full-flow` 一键完成
+
+## 当前运行逻辑（详细）
+
+### 1) custom-page 页面（前端独立展示）
+
+访问：
+
+```
+GET /custom-page?name=可可可&orderUserName=倪良辉&type=pp
+```
+
+运行流程：
+
+1. 服务端从 `user_data` 表中按 `orderUserName`（优先）或 `name` 查询最新记录。  
+2. 如果找不到用户数据，返回 404（页面提示“未找到用户”）。
+3. 找到用户后，服务端调用外部接口拉取券信息：
+   - 若存在有效 `smsToken`，优先用 `user_data.h5OrderNo + smsToken` 调短信取券。
+   - 否则使用 `user_data.orderNo` 调 `fetchCouponByOrderNo`（即 `/api/coupon` 同源逻辑）。
+   - 解密返回结果，提取 `couponCode/couponNum` 作为本次券码。
+4. 如果没有拿到 `couponCode`（过期或解密失败），`/api/vip-room` 直接返回 `410`：
+   ```json
+   { "ok": false, "error": "二维码已过期", "code": "COUPON_EXPIRED" }
+   ```
+5. 前端（custom-page）收到成功结果后，用 **couponCode** 本地生成二维码（不再依赖后端 `qrData` 图片）。
+6. 如果收到 `COUPON_EXPIRED` 或 `couponCode` 为空，前端显示“二维码已过期”。
+
+### 2) /api/vip-room 接口（custom-page 数据源）
+
+请求：
+
+```
+GET /api/vip-room?name=可可可&orderUserName=倪良辉
+```
+
+返回：
+
+- 成功：`ok=true` 且包含 `couponCode`（前端用它生成二维码）。
+- 失败：`ok=false`，如 `COUPON_EXPIRED`（二维码过期）。
+
+### 3) couponCode 获取与落库关系
+
+- **couponCode 不入库**：它是实时可变的券码，只在接口响应中返回。
+- **smsToken 会短期入库**：`/api/sms/verify` 会写入 `user_data.smsToken`，默认有效期约 5 分钟（可用 `SMS_TOKEN_TTL_SECONDS` 配置）。
+- 数据库只存“订单与用户快照”：`user_data` 表记录订单号、手机号、贵宾厅、有效期等。
+- 只有在 `POST /api/full-flow` 成功完成后，才会写入 `user_data` 表。
+
+### 4) 数据库写入位置（user_data）
+
+保存入口：
+
+- `POST /api/save-user-data`：手动保存
+- `POST /api/full-flow`：完整流程成功后自动保存
+
+保存字段（简化）：
+
+- 用户姓名、订单号、手机号、贵宾厅、权益剩余点数、有效期、状态等
+- 订单关键字段来自 `orderInfo`，券信息仅用于流程判断，不存 `couponCode`
 
 ## 配置说明（.env 可选）
 

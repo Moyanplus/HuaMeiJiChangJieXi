@@ -1,6 +1,7 @@
 const express = require("express");
 const logger = require("../../utils/logger");
 const { normalizeDataField } = require("../../utils/parse");
+const cfg = require("../../core/config");
 const { sendSmsCode, verifySmsCode } = require("../../services/smsService");
 
 /**
@@ -39,8 +40,9 @@ function extractSmsToken(result) {
  * 创建短信相关路由。
  * @returns {import("express").Router} 路由实例
  */
-function createSmsRouter() {
+function createSmsRouter({ db } = {}) {
   const router = express.Router();
+  const resolveDb = (req) => db || req.app.locals.db;
 
   /**
    * 发送短信验证码。
@@ -88,7 +90,8 @@ function createSmsRouter() {
    */
   router.post("/api/sms/verify", async (req, res) => {
     try {
-      const { orderId, smsCode } = req.body || {};
+      const { orderId, smsCode, orderUserName, phone, userName } =
+        req.body || {};
       if (!orderId || !smsCode) {
         return res.status(400).json({
           ok: false,
@@ -114,7 +117,37 @@ function createSmsRouter() {
         });
       }
 
-      res.json({ ok: true, result, smsToken });
+      const expiresAt = new Date(
+        Date.now() + cfg.SMS_TOKEN_TTL_SECONDS * 1000
+      ).toISOString();
+      try {
+        const storeResult = await resolveDb(req).updateSmsTokenByOrderId({
+          orderId,
+          smsToken,
+          expiresAt,
+        });
+        if (storeResult.changes === 0) {
+          const resolvedName = orderUserName || userName || "未知用户";
+          await resolveDb(req).insertSmsUserData({
+            userName: resolvedName,
+            orderId,
+            telephone: phone,
+          });
+          logger.info("sms token stored with new user record", { orderId });
+        } else {
+          logger.info("sms token stored", {
+            orderId,
+            changes: storeResult.changes,
+          });
+        }
+      } catch (storeError) {
+        logger.warn("sms token store failed", {
+          orderId,
+          error: storeError && storeError.message ? storeError.message : storeError,
+        });
+      }
+
+      res.json({ ok: true, result, smsToken, expiresAt });
     } catch (e) {
       logger.error("sms verify error", e && e.message ? e.message : e);
       res

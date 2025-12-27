@@ -147,6 +147,9 @@ class SmsCouponManager {
   async handleVerifyAndFetch() {
     const orderId = this.getOrderId();
     const smsCode = this.getSmsCode();
+    const orderUserNameInput = document.getElementById("orderUserNameInputQR");
+    const userNameInput = document.getElementById("userNameInputQR");
+    const phoneInput = document.getElementById("queryPhoneNo");
 
     if (!orderId) {
       this.showStatus("请输入订单号", "warning");
@@ -160,7 +163,13 @@ class SmsCouponManager {
     this.showStatus("正在验证验证码...", "info");
     try {
       console.log("短信验证请求:", { orderId, smsCodeLen: smsCode.length });
-      const verifyResp = await this.apiService.verifySmsCode(orderId, smsCode);
+      const verifyResp = await this.apiService.verifySmsCode(orderId, smsCode, {
+        orderUserName: orderUserNameInput
+          ? orderUserNameInput.value.trim()
+          : "",
+        userName: userNameInput ? userNameInput.value.trim() : "",
+        phone: phoneInput ? phoneInput.value.trim() : "",
+      });
       if (!verifyResp.ok) {
         throw new Error(verifyResp.error || "验证码验证失败");
       }
